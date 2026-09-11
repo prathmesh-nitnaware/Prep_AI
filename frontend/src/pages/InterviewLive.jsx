@@ -63,6 +63,7 @@ const InterviewLive = () => {
   const streamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
+  const pendingEvaluationsRef = useRef([]);
 
   // Timer interval while answering
   useEffect(() => {
@@ -264,35 +265,63 @@ const InterviewLive = () => {
       console.warn('Camera metrics computation error:', e);
     }
 
+    const currentQIndex = questionIndex;
+    const currentQText = question.question || question.description || question.title;
     const payload = {
       session_id: sessionId,
-      question_id: question.id || questionIndex,
-      question: question.question || question.description || question.title,
+      question_id: question.id || currentQIndex,
+      question: currentQText,
       answer: finalAnswer,
       voice_metrics: voiceMetrics,
       camera_metrics: cameraMetrics,
       context: {
         role: config.role,
-        question_index: questionIndex,
+        question_index: currentQIndex,
       },
     };
 
-    try {
-      if (questionIndex >= MAX_QUESTIONS) {
-        // Last question: finish evaluation, save & download recording, then navigate to final report
-        const evalResponse = await api.submitAnswer(payload);
-        const updatedHistory = [
-          ...sessionHistory,
-          {
-            question: question.question || question.description || question.title,
-            answer: finalAnswer,
-            feedback: evalResponse?.feedback || evalResponse,
-            voice_metrics: voiceMetrics,
-            camera_metrics: cameraMetrics,
-          },
-        ];
-        setSessionHistory(updatedHistory);
+    // Dispatch AI evaluation asynchronously in background (parallel non-blocking execution)
+    const evalPromise = api.submitAnswer(payload)
+      .then((evalResponse) => {
+        const feedback = evalResponse?.feedback || evalResponse || {};
+        setSessionHistory((prevHistory) =>
+          prevHistory.map((item) =>
+            item.question_index === currentQIndex ? { ...item, feedback } : item
+          )
+        );
+        return { question_index: currentQIndex, feedback };
+      })
+      .catch((err) => {
+        console.warn(`Background evaluation warning for Q${currentQIndex}:`, err);
+        return { question_index: currentQIndex, feedback: {} };
+      });
+
+    pendingEvaluationsRef.current.push(evalPromise);
+
+    const historyItem = {
+      question_index: currentQIndex,
+      question: currentQText,
+      answer: finalAnswer,
+      feedback: {},
+      voice_metrics: voiceMetrics,
+      camera_metrics: cameraMetrics,
+    };
+
+    const updatedHistory = [...sessionHistory, historyItem];
+    setSessionHistory(updatedHistory);
+
+    if (currentQIndex >= MAX_QUESTIONS) {
+      // Last question reached: wait for all background evaluations to settle, then navigate to report
+      try {
+        if (pendingEvaluationsRef.current.length > 0) {
+          await Promise.allSettled(pendingEvaluationsRef.current);
+        }
         await finishAndProcessRecording();
+      } catch (err) {
+        console.error('Finalization error:', err);
+      } finally {
+        setSubmitting(false);
+        setLoadingNext(false);
         navigate('/interview/report', {
           state: {
             history: updatedHistory,
@@ -300,52 +329,31 @@ const InterviewLive = () => {
             session_id: sessionId,
           },
         });
-        return;
       }
+      return;
+    }
 
-      // Execute answer evaluation and fetching next question in parallel
-      const [evalResult, nextResult] = await Promise.allSettled([
-        api.submitAnswer(payload),
-        api.getNextQuestion({
-          session_id: sessionId,
-          current_index: questionIndex - 1,
-          current_question_index: questionIndex - 1,
-          previous_answer: finalAnswer,
-        }),
-      ]);
+    // Immediately advance to next question asynchronously
+    try {
+      const nextResult = await api.getNextQuestion({
+        session_id: sessionId,
+        current_index: currentQIndex - 1,
+        current_question_index: currentQIndex - 1,
+        previous_answer: finalAnswer,
+      });
 
-      let evalFeedback = {};
-      if (evalResult.status === 'fulfilled') {
-        evalFeedback = evalResult.value?.feedback || evalResult.value || {};
-      } else {
-        console.warn('Background evaluation warning:', evalResult.reason);
-      }
-
-      const updatedHistory = [
-        ...sessionHistory,
-        {
-          question: question.question || question.description || question.title,
-          answer: finalAnswer,
-          feedback: evalFeedback,
-          voice_metrics: voiceMetrics,
-          camera_metrics: cameraMetrics,
-        },
-      ];
-      setSessionHistory(updatedHistory);
-
-      let nextQ = null;
-      if (nextResult.status === 'fulfilled' && nextResult.value) {
-        nextQ = nextResult.value.question || nextResult.value.data?.question;
-      }
-
+      const nextQ = nextResult?.question || nextResult?.data?.question;
       if (nextQ) {
         setQuestion(nextQ);
         setQuestionIndex((prev) => prev + 1);
         setUserAnswer('');
+        setElapsedSeconds(0);
         const qText = nextQ.question || nextQ.description || nextQ.title;
         if (qText) speakText(qText);
       } else {
-        // If index target reached or completed
+        if (pendingEvaluationsRef.current.length > 0) {
+          await Promise.allSettled(pendingEvaluationsRef.current);
+        }
         await finishAndProcessRecording();
         navigate('/interview/report', {
           state: {
@@ -356,7 +364,7 @@ const InterviewLive = () => {
         });
       }
     } catch (err) {
-      console.error('Answer submission error:', err);
+      console.error('Next question error:', err);
     } finally {
       setSubmitting(false);
       setLoadingNext(false);
