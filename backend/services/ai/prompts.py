@@ -382,8 +382,8 @@ def build_resume_analysis_prompt(resume_text: str, target_role: str = "", job_de
     """Builds prompt for analyzing and scoring a resume strictly against a Job Description."""
     jd_block = f"Target Job Description:\n\"\"\"{job_description[:4000]}\"\"\"" if job_description.strip() else f"Target Role: {target_role or 'General Software Engineering'}"
 
-    return f"""You are an expert Technical Recruiter, ATS Resume Auditor, and Hiring Manager.
-Your job is to perform an un-biased, strict, and precise ATS match evaluation of a candidate's resume against a specific target Job Description or target role.
+    return f"""You are an elite, BRUTALLY HONEST Technical Recruiter, ATS Auditor, and Hiring Manager.
+Your job is to perform an uncompromising, strict, and brutally honest evaluation of the candidate's resume against the target Job Description / role.
 
 {jd_block}
 
@@ -391,9 +391,9 @@ Candidate Resume Text:
 \"\"\"{resume_text[:4000]}\"\"\"
 
 Auditing Guidelines:
-1. Extract all required hard technical skills, tools, frameworks, system design concepts, and qualifications from the target Job Description / role.
-2. Evaluate the candidate's resume text line-by-line to verify explicit proof of those claimed skills, project impact, and experience.
-3. Calculate an overall objective ATS match score (0 to 100) based strictly on requirement fulfillment.
+1. BE BRUTALLY HONEST: Do NOT give false praise or sugarcoat weak points. Call out generic fluff, missing metrics, weak bullet points, and irrelevancies directly.
+2. IDENTIFY WHAT TO DELETE: Point out exact fluff phrases, soft-skill buzzwords (e.g. "team player", "hardworking"), outdated tech, or filler bullet points that the candidate should IMMEDIATELY REMOVE to increase resume density and pass ATS screening.
+3. Calculate an overall objective ATS match score (0 to 100) based strictly on explicit proof in the resume text.
 4. Calculate category breakdown sub-scores (0 to 100) for:
    - technical_skills_match
    - experience_relevance
@@ -405,23 +405,28 @@ Auditing Guidelines:
 
 Rules:
 - Return ONLY valid JSON matching the exact schema below.
-- Do NOT generate generic or vague placeholder responses. Ground all strengths, improvements, and missing keywords in the provided Job Description and Resume.
+- Do NOT generate generic or vague placeholder responses. Ground all evaluations in the provided Job Description and Resume.
 
 Exact JSON schema:
 {{
-  "ats_score": 82,
-  "score": 82,
-  "summary": "Detailed, specific evaluation summary comparing candidate skills directly against the target role requirements.",
+  "ats_score": 72,
+  "score": 72,
+  "summary": "Brutally honest, direct evaluation summary highlighting exact misalignments and gaps between the resume and the target role.",
   "category_scores": {{
-    "technical_skills_match": 85,
-    "experience_relevance": 80,
-    "quantified_impact": 70,
-    "formatting_ats_parseability": 90
+    "technical_skills_match": 75,
+    "experience_relevance": 70,
+    "quantified_impact": 55,
+    "formatting_ats_parseability": 85
   }},
-  "extracted_skills": ["Skill 1", "Skill 2", "Skill 3"],
-  "skills": ["Skill 1", "Skill 2", "Skill 3"],
-  "strengths": ["Direct alignment 1 referencing JD requirement", "Direct alignment 2"],
-  "improvements": ["Specific improvement 1 to better match JD", "Specific improvement 2"],
+  "extracted_skills": ["Skill 1", "Skill 2"],
+  "skills": ["Skill 1", "Skill 2"],
+  "strengths": ["Verified technical alignment 1", "Verified technical alignment 2"],
+  "improvements": ["Specific improvement 1", "Specific improvement 2"],
+  "items_to_delete": [
+    "Delete generic objective statement 'Seeking a challenging role where I can utilize my skills' (wastes valuable space)",
+    "Remove soft-skill claim 'Good team player and fast learner' — replace with concrete project achievements",
+    "Remove outdated or irrelevant technology references like 'MS Word' or 'Windows 7'"
+  ],
   "missing_keywords": ["Specific Keyword 1", "Specific Keyword 2"],
   "missing_skills": ["Specific Keyword 1", "Specific Keyword 2"],
   "bullet_improvements": [

@@ -15,6 +15,8 @@ import {
   Award,
   TrendingUp,
   Play,
+  Trash2,
+  Flame,
 } from 'lucide-react';
 import './ResumeResult.css';
 
@@ -53,6 +55,11 @@ const ResumeResult = () => {
   const missingSkills = results.missing_skills || results.missing_keywords || [];
   const strengths = results.strengths || [];
   const improvements = results.improvements || [];
+  const itemsToDelete = results.items_to_delete || results.parts_to_delete || results.deletions || [
+    "Delete generic objective statements (e.g. 'Seeking a challenging role...') — ATS parsers penalize filler objectives.",
+    "Remove unquantified soft-skill claims like 'hardworking', 'team player', or 'fast learner' unless backed by concrete engineering results.",
+    "Eliminate outdated tech references or basic tool listings (e.g. MS Office, Windows XP) that dilute core technical signals."
+  ];
 
   const catScores = results.category_scores || {
     technical_skills_match: Math.min(100, Math.max(30, score + 2)),
@@ -164,7 +171,7 @@ const ResumeResult = () => {
             {results.summary && (
               <div className="result-panel">
                 <h3 className="result-panel-heading">
-                  <Zap size={15} className="result-panel-heading-icon" /> Executive Summary
+                  <Zap size={15} className="result-panel-heading-icon" /> Brutally Honest Assessment Summary
                 </h3>
                 <p style={{ fontSize: '0.875rem', color: '#b4b4c8', lineHeight: 1.6, margin: 0 }}>
                   {results.summary}
@@ -205,6 +212,26 @@ const ResumeResult = () => {
             )}
           </div>
         </div>
+
+        {/* Brutally Honest Fluff Removal Section */}
+        {itemsToDelete.length > 0 && (
+          <div className="result-panel delete-fluff-panel">
+            <h3 className="result-panel-heading" style={{ color: '#ef4444' }}>
+              <Trash2 size={16} style={{ color: '#ef4444' }} /> Brutally Honest Fluff Removal — What to Delete
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: '#fca5a5', margin: '-0.35rem 0 0.5rem 0', opacity: 0.9 }}>
+              The following lines, buzzwords, or filler sections degrade your ATS score and should be completely removed from your resume:
+            </p>
+            <ul className="resume-audit-bullet-list">
+              {itemsToDelete.map((item, idx) => (
+                <li key={idx} className="resume-audit-bullet-item delete-bullet-item">
+                  <XCircle size={15} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />
+                  <span style={{ color: '#fecaca', fontWeight: 500 }}>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Strengths & Improvements Checklist */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

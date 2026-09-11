@@ -348,6 +348,9 @@ def validate_resume_analysis(data: Any) -> Dict[str, Any]:
                 })
 
     interview_focus_areas = ensure_list_of_strings(data.get("interview_focus_areas"))
+    items_to_delete = ensure_list_of_strings(
+        data.get("items_to_delete") or data.get("parts_to_delete") or data.get("deletions")
+    )
 
     return {
         "score": ats_score,
@@ -358,6 +361,7 @@ def validate_resume_analysis(data: Any) -> Dict[str, Any]:
         "skills": extracted_skills,
         "strengths": strengths,
         "improvements": improvements,
+        "items_to_delete": items_to_delete,
         "missing_keywords": missing_keywords,
         "missing_skills": missing_keywords,
         "bullet_improvements": bullet_improvements,
