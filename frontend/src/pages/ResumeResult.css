@@ -165,6 +165,104 @@
   border-radius: 5px;
 }
 
+/* Category Breakdown Bars */
+.category-bars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.category-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.category-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.category-bar-track {
+  height: 6px;
+  background: var(--bg-card-hover);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.category-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c5cfc, #36a3ff);
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+
+/* Bullet Point Optimizer Cards */
+.bullet-optimizer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bullet-rewrite-card {
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.bullet-box-label {
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bullet-box-label.original {
+  color: var(--text-tertiary);
+}
+
+.bullet-box-label.optimized {
+  color: var(--success);
+}
+
+.bullet-text-content {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+/* Bullet list for strengths and improvements */
+.resume-audit-bullet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.resume-audit-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 768px) {
   .result-header-card {

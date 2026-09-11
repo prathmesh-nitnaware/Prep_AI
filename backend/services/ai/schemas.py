@@ -317,18 +317,50 @@ def validate_resume_analysis(data: Any) -> Dict[str, Any]:
     """Validates resume scoring and extraction output."""
     if not isinstance(data, dict):
         raise AIValidationError("Resume analysis must be a JSON object.")
-    ats_score = clamp_score(data.get("ats_score"), 0, 100, default=75)
-    summary = str(data.get("summary") or "Resume parsed.").strip()
+    
+    raw_score = data.get("score") if data.get("score") is not None else data.get("ats_score")
+    ats_score = clamp_score(raw_score, 0, 100, default=75)
+    summary = str(data.get("summary") or "Resume parsed and evaluated.").strip()
     extracted_skills = ensure_list_of_strings(data.get("extracted_skills") or data.get("skills"))
     strengths = ensure_list_of_strings(data.get("strengths"))
     improvements = ensure_list_of_strings(data.get("improvements"))
-    missing_keywords = ensure_list_of_strings(data.get("missing_keywords"))
+    missing_keywords = ensure_list_of_strings(data.get("missing_keywords") or data.get("missing_skills"))
+    
+    cat_scores = data.get("category_scores") or {}
+    if not isinstance(cat_scores, dict):
+        cat_scores = {}
+
+    category_scores = {
+        "technical_skills_match": clamp_score(cat_scores.get("technical_skills_match"), 0, 100, default=min(100, max(30, ats_score + 2))),
+        "experience_relevance": clamp_score(cat_scores.get("experience_relevance"), 0, 100, default=min(100, max(30, ats_score - 3))),
+        "quantified_impact": clamp_score(cat_scores.get("quantified_impact"), 0, 100, default=min(100, max(25, ats_score - 10))),
+        "formatting_ats_parseability": clamp_score(cat_scores.get("formatting_ats_parseability"), 0, 100, default=min(100, max(40, ats_score + 5))),
+    }
+
+    bullet_improvements = []
+    raw_bullets = data.get("bullet_improvements")
+    if isinstance(raw_bullets, list):
+        for b in raw_bullets:
+            if isinstance(b, dict) and b.get("original") and b.get("optimized"):
+                bullet_improvements.append({
+                    "original": str(b["original"]).strip(),
+                    "optimized": str(b["optimized"]).strip()
+                })
+
+    interview_focus_areas = ensure_list_of_strings(data.get("interview_focus_areas"))
+
     return {
+        "score": ats_score,
         "ats_score": ats_score,
         "summary": summary,
+        "category_scores": category_scores,
         "extracted_skills": extracted_skills,
+        "skills": extracted_skills,
         "strengths": strengths,
         "improvements": improvements,
         "missing_keywords": missing_keywords,
+        "missing_skills": missing_keywords,
+        "bullet_improvements": bullet_improvements,
+        "interview_focus_areas": interview_focus_areas,
     }
 

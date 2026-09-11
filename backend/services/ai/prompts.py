@@ -383,7 +383,7 @@ def build_resume_analysis_prompt(resume_text: str, target_role: str = "", job_de
     jd_block = f"Target Job Description:\n\"\"\"{job_description[:4000]}\"\"\"" if job_description.strip() else f"Target Role: {target_role or 'General Software Engineering'}"
 
     return f"""You are an expert Technical Recruiter, ATS Resume Auditor, and Hiring Manager.
-Your job is to perform an un-biased, strict, and precise ATS match evaluation of a candidate's resume against a specific target Job Description.
+Your job is to perform an un-biased, strict, and precise ATS match evaluation of a candidate's resume against a specific target Job Description or target role.
 
 {jd_block}
 
@@ -391,11 +391,17 @@ Candidate Resume Text:
 \"\"\"{resume_text[:4000]}\"\"\"
 
 Auditing Guidelines:
-1. Extract all required hard technical skills, tools, frameworks, system design concepts, and qualifications from the target Job Description.
+1. Extract all required hard technical skills, tools, frameworks, system design concepts, and qualifications from the target Job Description / role.
 2. Evaluate the candidate's resume text line-by-line to verify explicit proof of those claimed skills, project impact, and experience.
-3. Calculate an objective ATS match score (0 to 100) based strictly on how many Job Description requirements and key technical concepts are fulfilled by the resume.
-4. Identify specific missing technical keywords, frameworks, or tools present in the Job Description that are absent or under-represented in the candidate's resume.
-5. Provide actionable, non-vague feedback. Highlight exact strengths that directly match the Job Description, and provide concrete instructions for what experiences, metrics, or keywords to add to increase alignment.
+3. Calculate an overall objective ATS match score (0 to 100) based strictly on requirement fulfillment.
+4. Calculate category breakdown sub-scores (0 to 100) for:
+   - technical_skills_match
+   - experience_relevance
+   - quantified_impact (presence of metrics, numbers, ROI)
+   - formatting_ats_parseability
+5. Identify specific missing technical keywords, frameworks, or tools present in the Job Description / role that are absent or under-represented in the resume.
+6. Provide specific, high-impact bullet point optimizations ("original" vs "optimized") rewriting weak resume bullet points with action verbs and metrics.
+7. Provide tailored interview focus areas based on candidate skill gaps.
 
 Rules:
 - Return ONLY valid JSON matching the exact schema below.
@@ -403,10 +409,26 @@ Rules:
 
 Exact JSON schema:
 {{
-  "ats_score": 85,
-  "summary": "Detailed, specific evaluation summary comparing candidate skills directly against the target Job Description requirements.",
-  "extracted_skills": ["Skill 1", "Skill 2"],
+  "ats_score": 82,
+  "score": 82,
+  "summary": "Detailed, specific evaluation summary comparing candidate skills directly against the target role requirements.",
+  "category_scores": {{
+    "technical_skills_match": 85,
+    "experience_relevance": 80,
+    "quantified_impact": 70,
+    "formatting_ats_parseability": 90
+  }},
+  "extracted_skills": ["Skill 1", "Skill 2", "Skill 3"],
+  "skills": ["Skill 1", "Skill 2", "Skill 3"],
   "strengths": ["Direct alignment 1 referencing JD requirement", "Direct alignment 2"],
   "improvements": ["Specific improvement 1 to better match JD", "Specific improvement 2"],
-  "missing_keywords": ["Specific JD Keyword 1", "Specific JD Keyword 2"]
+  "missing_keywords": ["Specific Keyword 1", "Specific Keyword 2"],
+  "missing_skills": ["Specific Keyword 1", "Specific Keyword 2"],
+  "bullet_improvements": [
+    {{
+      "original": "Worked on backend APIs using Java.",
+      "optimized": "Architected high-throughput REST APIs using Java and Spring Boot, servicing 50k+ daily active users with 99.9% uptime."
+    }}
+  ],
+  "interview_focus_areas": ["Be prepared to answer deep questions on distributed caching and database optimization."]
 }}"""

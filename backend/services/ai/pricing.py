@@ -110,7 +110,7 @@ MAX_OUTPUT_TOKENS: Dict[str, int] = {
     "ADAPTIVE_QUESTION": int(os.getenv("MAX_OUTPUT_TOKENS_ADAPTIVE_Q", "350")),
     "ANSWER_EVALUATION": int(os.getenv("MAX_OUTPUT_TOKENS_EVAL", "350")),
     "FINAL_REPORT": int(os.getenv("MAX_OUTPUT_TOKENS_REPORT", "512")),
-    "RESUME_SCORING": int(os.getenv("MAX_OUTPUT_TOKENS_RESUME", "400")),
+    "RESUME_SCORING": int(os.getenv("MAX_OUTPUT_TOKENS_RESUME", "1500")),
     "CODING_EVALUATION": int(os.getenv("MAX_OUTPUT_TOKENS_CODING", "350")),
     "CHATBOT_ASSIST": int(os.getenv("MAX_OUTPUT_TOKENS_CHAT", "200")),
 }
