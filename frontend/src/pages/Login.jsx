@@ -10,7 +10,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
-  const { login, user } = useAuth();
+  const { login, user, submitting } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
