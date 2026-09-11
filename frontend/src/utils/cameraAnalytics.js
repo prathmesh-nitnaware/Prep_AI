@@ -291,6 +291,10 @@ export class CameraAnalyticsEngine {
       coaching_tips: coachingTips,
     };
   }
+
+  getSummary() {
+    return this.computeMetrics();
+  }
 }
 
 export const defaultCameraEngine = new CameraAnalyticsEngine();

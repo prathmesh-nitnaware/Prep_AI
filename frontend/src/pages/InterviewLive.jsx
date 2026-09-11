@@ -245,8 +245,24 @@ const InterviewLive = () => {
     setSubmitting(true);
     setLoadingNext(true);
 
-    const voiceMetrics = defaultVoiceEngine.computeMetrics(finalAnswer);
-    const cameraMetrics = defaultCameraEngine.getSummary();
+    let voiceMetrics = {};
+    let cameraMetrics = {};
+    try {
+      if (typeof defaultVoiceEngine?.computeMetrics === 'function') {
+        voiceMetrics = defaultVoiceEngine.computeMetrics(finalAnswer);
+      }
+    } catch (e) {
+      console.warn('Voice metrics computation error:', e);
+    }
+    try {
+      if (typeof defaultCameraEngine?.computeMetrics === 'function') {
+        cameraMetrics = defaultCameraEngine.computeMetrics();
+      } else if (typeof defaultCameraEngine?.getSummary === 'function') {
+        cameraMetrics = defaultCameraEngine.getSummary();
+      }
+    } catch (e) {
+      console.warn('Camera metrics computation error:', e);
+    }
 
     const payload = {
       session_id: sessionId,
