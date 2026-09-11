@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 import { Mail, Lock, AlertCircle, Sparkles, Layers, Target, ShieldCheck } from 'lucide-react';
 import './Login.css';
-
-import GoogleAccountModal from '../components/auth/GoogleAccountModal';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
-  const { login, user, submitting } = useAuth();
+  const { login, loginWithGoogle, user, submitting } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -21,8 +19,8 @@ const Login = () => {
     if (error) setError(null);
   };
 
-  const handleGoogleSuccess = () => {
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const handleGoogleSuccess = (userData) => {
+    const currentUser = userData || JSON.parse(localStorage.getItem('user') || '{}');
     if (currentUser?.role === 'admin') {
       navigate('/admin', { replace: true });
     } else if (currentUser?.onboarding_completed === false) {
@@ -32,9 +30,39 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    setIsGoogleModalOpen(true);
-  };
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
+        const profile = await userInfoRes.json();
+
+        if (profile?.email) {
+          const result = await loginWithGoogle({
+            email: profile.email,
+            name: profile.name || profile.given_name || profile.email.split('@')[0],
+            google_id: profile.sub || `google_${Date.now()}`,
+            picture: profile.picture
+          });
+
+          if (result.success) {
+            handleGoogleSuccess(result.user);
+          } else {
+            setError(result.message || 'Google authentication failed.');
+          }
+        } else {
+          setError('Failed to retrieve user profile from Google.');
+        }
+      } catch (err) {
+        setError('Connection error during Google Sign-In.');
+      }
+    },
+    onError: (errorResponse) => {
+      console.error('Google Sign-In Error:', errorResponse);
+      setError('Google Sign-In was cancelled or failed.');
+    }
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -137,7 +165,7 @@ const Login = () => {
           <button
             type="button"
             className="btn-google-auth"
-            onClick={handleGoogleSignIn}
+            onClick={() => googleLogin()}
             disabled={submitting}
           >
             <svg className="google-icon-svg" viewBox="0 0 24 24">
@@ -223,12 +251,6 @@ const Login = () => {
           </div>
         </div>
       </div>
-
-      <GoogleAccountModal
-        isOpen={isGoogleModalOpen}
-        onClose={() => setIsGoogleModalOpen(false)}
-        onSuccess={handleGoogleSuccess}
-      />
     </div>
   );
 };
