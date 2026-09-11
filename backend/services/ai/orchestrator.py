@@ -340,7 +340,7 @@ def calculate_interview_scores(questions: List[Dict[str, Any]], answers: List[Di
         voice_sig = signals.get("voice") or {}
         cam_sig = signals.get("camera") or {}
 
-        if voice_sig and isinstance(voice_sig, dict) and len(voice_sig) > 0:
+        if voice_sig and isinstance(voice_sig, dict) and voice_sig.get("voice_available") is True and voice_sig.get("words_spoken", 0) > 0:
             has_real_voice_telemetry = True
             if "wpm" in voice_sig and voice_sig["wpm"] > 0:
                 wpm_list.append(voice_sig["wpm"])
@@ -354,7 +354,7 @@ def calculate_interview_scores(questions: List[Dict[str, Any]], answers: List[Di
         else:
             words_total += word_count
 
-        if cam_sig and isinstance(cam_sig, dict) and len(cam_sig) > 0:
+        if cam_sig and isinstance(cam_sig, dict) and cam_sig.get("camera_available") is True and cam_sig.get("total_frames_analyzed", 0) > 0:
             has_real_cam_telemetry = True
             if "face_presence_pct" in cam_sig:
                 face_presence_list.append(float(cam_sig["face_presence_pct"]))

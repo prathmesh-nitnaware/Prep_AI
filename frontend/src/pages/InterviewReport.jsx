@@ -100,6 +100,17 @@ const InterviewReport = () => {
   );
   const deliveryScore = serverReport?.delivery_score ?? 85;
 
+  const hasVoice = Boolean(
+    serverReport?.delivery_metrics?.voice_available ||
+    effectiveHistory.some(item => 
+      item.voice_metrics?.voice_available === true || 
+      (item.voice_metrics?.words_spoken > 0 && item.voice_metrics?.wpm > 0) ||
+      (item.signals?.voice && item.signals?.voice?.voice_available === true)
+    )
+  );
+
+  const isTextMode = !hasVoice;
+
   const contentDims = serverReport?.content_dimensions || {};
   const fundamentalsScore = Math.min(100, Math.round((contentDims.technical_accuracy || 8.2) * 10));
   const appliedScore = Math.min(100, Math.round((contentDims.depth || 7.8) * 10));
@@ -173,19 +184,27 @@ const InterviewReport = () => {
             <div className="score-split-row">
               <div className="score-split-card">
                 <span className="split-score-num">{contentScore}%</span>
-                <span className="split-score-lbl">Content (85%)</span>
+                <span className="split-score-lbl">
+                  {isTextMode ? 'Content (100% Score)' : 'Content (85%)'}
+                </span>
                 <span className="split-score-desc">Technical accuracy, depth, and trade-offs.</span>
               </div>
 
-              <div className="score-split-card">
-                <span className="split-score-num">{deliveryScore}%</span>
-                <span className="split-score-lbl">Delivery (15%)</span>
-                <span className="split-score-desc">Vocal clarity, pacing, and framing.</span>
+              <div className="score-split-card" style={isTextMode ? { opacity: 0.75 } : {}}>
+                <span className="split-score-num">{isTextMode ? 'N/A' : `${deliveryScore}%`}</span>
+                <span className="split-score-lbl">
+                  {isTextMode ? 'Delivery (Not Recorded)' : 'Delivery (15%)'}
+                </span>
+                <span className="split-score-desc">
+                  {isTextMode ? 'Typed response mode. 100% of score is based on technical content.' : 'Vocal clarity, pacing, and framing.'}
+                </span>
               </div>
             </div>
 
             <p style={{ fontSize: '0.775rem', color: '#7c7c90', margin: 0, lineHeight: 1.45 }}>
-              Hardware limitations do not penalize content scores. Delivery coaching is strictly separated to guarantee scoring integrity.
+              {isTextMode 
+                ? 'Typed response mode active: Your total score is 100% based on technical content accuracy (microphone/voice was not recorded and did not penalize your score).' 
+                : 'Hardware limitations do not penalize content scores. Delivery coaching is strictly separated to guarantee scoring integrity.'}
             </p>
           </div>
 
