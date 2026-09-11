@@ -62,6 +62,7 @@ const AppRoutes = () => {
           {/* Voice Interview Config & Report */}
           <Route path="/interview/setup" element={<Interview />} /> 
           <Route path="/interview/report" element={<InterviewReport />} />
+          <Route path="/interview/report/:sessionId" element={<InterviewReport />} />
           
           {/* Coding Dojo - HackerRank Style Implementation */}
           <Route path="/coding/dojo" element={<CodingDojo />} />

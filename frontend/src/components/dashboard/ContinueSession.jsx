@@ -32,8 +32,10 @@ export const ContinueSession = ({ latestSession, totalInterviews }) => {
   const timeAgo = formatTimeAgo(latestSession.created_at);
 
   const handleReview = () => {
-    navigate('/interview/report', {
+    const sId = latestSession.id || latestSession._id || latestSession.session_id;
+    navigate(sId ? `/interview/report/${sId}` : '/interview/report', {
       state: {
+        session_id: sId,
         history: latestSession.answers || [],
         config: latestSession,
       },

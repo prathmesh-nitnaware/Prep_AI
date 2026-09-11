@@ -7,8 +7,10 @@ export const RecentInterviewsTable = ({ history, onDelete }) => {
   const navigate = useNavigate();
 
   const handleRowClick = (session) => {
-    navigate('/interview/report', {
+    const sId = session.id || session._id || session.session_id;
+    navigate(sId ? `/interview/report/${sId}` : '/interview/report', {
       state: {
+        session_id: sId,
         history: session.answers || [],
         config: session,
       },

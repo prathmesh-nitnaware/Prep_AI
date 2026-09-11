@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import {
   CheckCircle,
   AlertTriangle,
@@ -29,22 +29,24 @@ const STAGE_NAMES = [
 ];
 
 const InterviewReport = () => {
+  const { sessionId: paramSessionId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
   const { history = [], config = {}, session_id = null } = location.state || {};
+  const activeSessionId = session_id || paramSessionId || config?.id || config?._id;
   const [serverReport, setServerReport] = useState(null);
-  const [loadingReport, setLoadingReport] = useState(Boolean(session_id));
+  const [loadingReport, setLoadingReport] = useState(Boolean(activeSessionId));
 
   useEffect(() => {
     const fetchAuthoritativeReport = async () => {
-      if (!session_id) {
+      if (!activeSessionId) {
         setLoadingReport(false);
         return;
       }
       try {
         setLoadingReport(true);
-        const res = await api.client.get(`/api/interview/session/${session_id}/report`);
+        const res = await api.client.get(`/api/interview/session/${activeSessionId}/report`);
         if (res.data && res.data.report) {
           setServerReport(res.data.report);
         }
@@ -55,7 +57,7 @@ const InterviewReport = () => {
       }
     };
     fetchAuthoritativeReport();
-  }, [session_id]);
+  }, [activeSessionId]);
 
   const effectiveHistory = (history && history.length > 0) ? history : (serverReport?.answers || []);
 

@@ -378,3 +378,48 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ── PRINT AUDIT PDF STYLES ────────────────────────────── */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  .report-top-actions,
+  .navbar-container,
+  nav,
+  header {
+    display: none !important;
+  }
+  .report-audit-page {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  .report-audit-container {
+    max-width: 100% !important;
+  }
+  .report-hero-panel,
+  .pillar-panel,
+  .question-audit-card,
+  .score-split-card,
+  .qa-response-box,
+  .feedback-subpanel {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+  }
+  .report-hero-title,
+  .pillar-heading,
+  .split-score-num,
+  .qa-question-text,
+  .feedback-subpanel-title {
+    color: #0f172a !important;
+  }
+  .report-hero-sub,
+  .split-score-lbl,
+  .split-score-desc,
+  .dim-header {
+    color: #475569 !important;
+  }
+}
