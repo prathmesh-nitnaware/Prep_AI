@@ -109,18 +109,28 @@ def submit_answer(current_user):
             return jsonify({"error": "Missing or malformed JSON body"}), 400
 
         session_id = data.get("session_id")
-        question = data.get("question", {})
+        raw_question = data.get("question", {})
+        question_id = data.get("question_id")
         answer = str(data.get("answer", "")).strip()[:5000]
-        signals = data.get("signals")
+        signals = data.get("signals") or data.get("voice_metrics")
         user_id = str(current_user["id"])
 
         if not session_id:
             return jsonify({"error": "session_id is required"}), 400
 
+        if isinstance(raw_question, str):
+            question_dict = {"id": question_id or 1, "question": raw_question, "title": raw_question}
+        elif isinstance(raw_question, dict):
+            question_dict = dict(raw_question)
+            if "id" not in question_dict and question_id:
+                question_dict["id"] = question_id
+        else:
+            question_dict = {"id": question_id or 1, "question": str(raw_question)}
+
         feedback = orchestrator.evaluate_and_submit_answer(
             session_id=session_id,
             user_id=user_id,
-            question_data=question,
+            question_data=question_dict,
             answer_text=answer,
             signals=signals,
         )

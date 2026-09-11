@@ -267,10 +267,14 @@ const InterviewLive = () => {
 
     const currentQIndex = questionIndex;
     const currentQText = question.question || question.description || question.title;
+    const questionObj = typeof question === 'object' && question !== null 
+      ? { ...question, id: question.id || currentQIndex, question: currentQText }
+      : { id: currentQIndex, question: currentQText, title: currentQText };
+
     const payload = {
       session_id: sessionId,
       question_id: question.id || currentQIndex,
-      question: currentQText,
+      question: questionObj,
       answer: finalAnswer,
       voice_metrics: voiceMetrics,
       camera_metrics: cameraMetrics,

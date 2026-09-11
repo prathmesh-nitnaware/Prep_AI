@@ -938,6 +938,11 @@ class InterviewOrchestrator:
         5. Delivery Signals Persistence: Stores voice/camera telemetry for coaching analysis.
         6. Dynamic Interview State Update: Updates strengths, gaps, validated skills, and difficulty.
         """
+        if isinstance(question_data, str):
+            question_data = {"question": question_data, "id": str(question_data)}
+        elif not isinstance(question_data, dict):
+            question_data = {"question": str(question_data), "id": str(question_data)}
+
         target_qid = question_data.get("id")
         q_type = str(question_data.get("question_type", "technical")).lower()
         correct_answer = question_data.get("correct_answer")
