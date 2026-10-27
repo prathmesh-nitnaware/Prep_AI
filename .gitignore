@@ -80,3 +80,12 @@ Thumbs.db
 ml/audio/test_audio.wav
 ml/nlp/test_resume.pdf
 scratch/
+
+# =========================
+# Backend dev/debug artifacts
+# =========================
+backend/test_out.txt
+backend/test_out_utf8.txt
+backend/test_login.py
+backend/update_samples.py
+backend/verify_all_users.py

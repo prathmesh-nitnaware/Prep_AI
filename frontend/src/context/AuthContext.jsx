@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
       return "";
     }
-    return "https://prep-ai-37pj.onrender.com";
+    return "";
   };
 
   const API_URL = getApiUrl();
