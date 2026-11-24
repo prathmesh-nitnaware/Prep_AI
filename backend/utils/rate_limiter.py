@@ -37,9 +37,26 @@ class RateLimiterBackend(ABC):
 
 class InMemoryRateLimiterBackend(RateLimiterBackend):
     """
-    Token-Bucket rate limiter maintained per process/instance.
-    Each IP receives `capacity` tokens, refilling at `refill_rate` tokens per second.
-    Thread-safe via internal lock.
+    Token-Bucket rate limiter maintained strictly per Python process/instance.
+
+    Arithmetic & Concurrency Model:
+      - Initial Bucket Capacity: `capacity` (default 60 tokens).
+      - Burst Allowance: Exactly 60 requests per worker process before throttling.
+      - Refill Rate: `refill_rate` (default 15.0 tokens per SECOND, not per minute).
+      - Sustained Throughput: 15 requests/second (900 requests/minute) per worker process.
+      - First-Minute Ceiling: 60 (initial burst) + 15 * 60 (refill) = 960 requests per process.
+
+    Process-Local Isolation & Multi-Worker Aggregate Bounds:
+      - In multi-process deployments (e.g. 3 Docker containers x 2 Gunicorn workers = 6 workers),
+        each process maintains an independent in-memory bucket store.
+      - State is process-local and is NOT globally synchronized across worker processes.
+      - Aggregate cluster metrics (e.g. theoretical burst ceiling of 360 requests and sustained
+        90 req/s across 6 workers) represent theoretical mathematical upper bounds under
+        ideal round-robin distribution, NOT guaranteed throughput.
+      - If trusted proxy headers are missing or malformed and requests fall back to an internal
+        proxy IP, distinct users will collide on the fallback IP and share a single bucket.
+      - Code-level support for 'nginx' or 'render' proxy strategies does not imply that those
+        configurations are actively enabled in the live environment without explicit environment configuration.
     """
 
     def __init__(self, capacity: int = 60, refill_rate: float = 15.0):
@@ -83,7 +100,7 @@ class InMemoryRateLimiterBackend(RateLimiterBackend):
                 "capacity": self._capacity,
                 "refill_rate": self._refill_rate,
                 "is_distributed": False,
-                "scope_note": "Rate limits are enforced per backend replica instance.",
+                "scope_note": "Rate limits are process-local and enforced independently per Gunicorn worker process.",
             }
 
 

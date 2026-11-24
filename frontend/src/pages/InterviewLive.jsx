@@ -149,7 +149,7 @@ const InterviewLive = () => {
         try {
           const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
 
-          // 1. AUTO DOWNLOAD TO CANDIDATE'S PC
+          // Auto-download recording directly to candidate device (Client-Side Only)
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.style.display = 'none';
@@ -162,10 +162,6 @@ const InterviewLive = () => {
             URL.revokeObjectURL(url);
           }, 1000);
 
-          // 2. UPLOAD TO BACKEND DATABASE / STORAGE
-          if (sessionId) {
-            await api.uploadInterviewRecording(sessionId, blob);
-          }
           resolve(blob);
         } catch (err) {
           console.error('Error saving/downloading recording:', err);

@@ -12,8 +12,10 @@ import json
 import logging
 import threading
 import functools
+import ipaddress
 from collections import defaultdict
 from flask import request, jsonify, g
+from config import Config
 
 # ============================================================
 # 1. STRUCTURED LOGGING
@@ -59,6 +61,65 @@ _rate_limiter = default_rate_limiter
 _cache = default_cache
 
 
+def resolve_client_ip(req=None) -> str:
+    """
+    Safely resolve the client IP address based on Config.PROXY_STRATEGY.
+
+    Strategies:
+      - 'direct': Trust no forwarded headers; use req.remote_addr.
+      - 'nginx':  Trust only validated 'X-Real-IP' (overwritten by Nginx).
+      - 'render': Trust only validated 'CF-Connecting-IP' (set by Cloudflare/Render edge).
+
+    Never uses or trusts X-Forwarded-For for client identity.
+    If a trusted proxy header is missing, empty, malformed, or comma-separated,
+    it emits a warning without logging untrusted header contents and falls back
+    to req.remote_addr (or '127.0.0.1').
+
+    NOTE: When falling back to req.remote_addr behind a reverse proxy (e.g. if the
+    trusted header is missing), all requests through that proxy will share the
+    fallback proxy IP, causing multiple users to share a single rate-limit bucket.
+    """
+    if req is None:
+        req = request
+
+    strategy = getattr(Config, "PROXY_STRATEGY", "direct")
+    fallback_ip = getattr(req, "remote_addr", None) or "127.0.0.1"
+
+    if strategy == "direct":
+        return fallback_ip
+
+    trusted_header = "X-Real-IP" if strategy == "nginx" else "CF-Connecting-IP"
+    raw_header = req.headers.get(trusted_header) if hasattr(req, "headers") else None
+
+    if not raw_header or not raw_header.strip():
+        logger.warning(
+            "Trusted proxy header missing; falling back to remote_addr",
+            extra={"strategy": strategy, "trusted_header": trusted_header, "fallback_ip": fallback_ip}
+        )
+        return fallback_ip
+
+    candidate_ip = raw_header.strip()
+
+    # Reject comma-separated chains (e.g. multi-hop proxy chains)
+    if "," in candidate_ip:
+        logger.warning(
+            "Trusted proxy header contains invalid comma-separated chain; falling back to remote_addr",
+            extra={"strategy": strategy, "trusted_header": trusted_header, "fallback_ip": fallback_ip}
+        )
+        return fallback_ip
+
+    # Validate syntax via standard library ipaddress
+    try:
+        validated = ipaddress.ip_address(candidate_ip)
+        return str(validated)
+    except ValueError:
+        logger.warning(
+            "Trusted proxy header contains malformed IP address; falling back to remote_addr",
+            extra={"strategy": strategy, "trusted_header": trusted_header, "fallback_ip": fallback_ip}
+        )
+        return fallback_ip
+
+
 def rate_limit(fn):
     """
     Route decorator. Returns HTTP 429 if the request IP is throttled.
@@ -70,7 +131,7 @@ def rate_limit(fn):
     """
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "0.0.0.0").split(",")[0].strip()
+        ip = resolve_client_ip()
         if not _rate_limiter.is_allowed(ip):
             remaining = _rate_limiter.remaining(ip)
             logger.warning("Rate limit exceeded", extra={"ip": ip, "endpoint": request.path})
@@ -162,7 +223,7 @@ def register_request_logger(app):
     @app.after_request
     def _after(response):
         latency_ms = round((time.monotonic() - getattr(g, "start_time", time.monotonic())) * 1000, 2)
-        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+        ip = resolve_client_ip()
         logger.info(
             f"{request.method} {request.path} → {response.status_code}",
             extra={
@@ -171,7 +232,7 @@ def register_request_logger(app):
                 "method":     request.method,
                 "status":     response.status_code,
                 "latency_ms": latency_ms,
-                "ip":         ip.split(",")[0].strip(),
+                "ip":         ip,
             }
         )
         response.headers["X-Request-ID"] = getattr(g, "request_id", "")

@@ -189,16 +189,6 @@ export const api = {
     return res.data;
   },
 
-  uploadInterviewRecording: async (sessionId, videoBlob) => {
-    const formData = new FormData();
-    formData.append("session_id", sessionId);
-    formData.append("recording", videoBlob, `recording_${sessionId}.webm`);
-    const res = await apiClient.post("/api/interview/upload-recording", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return res.data;
-  },
-
   /**
    * ANALYTICS & DASHBOARD
    */

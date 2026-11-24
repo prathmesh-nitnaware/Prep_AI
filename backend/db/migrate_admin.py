@@ -8,9 +8,6 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import certifi
-from pymongo import MongoClient
-from extensions import get_db, init_db
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,10 +15,26 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI", "")
 
 def migrate_admin():
+    # Safe execution guard: prevent accidental execution and data overwrites
+    if os.getenv("CONFIRM_ADMIN_MIGRATION", "").strip().lower() != "true":
+        print("[ABORTED] migrate_admin.py is a one-time migration utility.")
+        print("          To execute, explicitly set CONFIRM_ADMIN_MIGRATION=true in your environment.")
+        return
+
+    mongo_uri = (os.getenv("MONGO_URI") or MONGO_URI).strip()
+    if not mongo_uri:
+        print("[ERROR] MONGO_URI environment variable is required for migration.")
+        return
+
+    # Defer database imports until after execution guards pass to eliminate import-time side effects
+    import certifi
+    from pymongo import MongoClient
+    from extensions import get_db, init_db
+
     print("[*] Initializing Neon DB schema...")
     init_db()
     print("[*] Connecting to MongoDB Atlas...")
-    mongo_client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+    mongo_client = MongoClient(mongo_uri, tlsCAFile=certifi.where())
     mongo_db = mongo_client["prepai"]
 
     admin = mongo_db["users"].find_one({"role": "admin"})
@@ -60,7 +73,7 @@ def migrate_admin():
 
     print("[DONE] Admin migrated successfully! Neon ID: " + str(new_id))
     print("   Email:    " + email)
-    print("   Password: admin123  (unchanged from MongoDB)")
+
 
 if __name__ == "__main__":
     migrate_admin()

@@ -327,53 +327,15 @@ def get_session(current_user, session_id):
         return jsonify({"error": str(e)}), 500
 
 
-# ── UPLOAD SESSION RECORDING ────────────────────────────────
+# ── DEPRECATED: UPLOAD SESSION RECORDING (CLIENT-SIDE ONLY ARCHITECTURE) ──
 @interview_bp.route("/upload-recording", methods=["POST"])
-@token_required
-def upload_recording(current_user):
-    try:
-        session_id = request.form.get("session_id")
-        if not session_id:
-            return jsonify({"error": "session_id is required"}), 400
-
-        if "recording" not in request.files:
-            return jsonify({"error": "No recording file uploaded"}), 400
-
-        file = request.files["recording"]
-        if not file or not file.filename:
-            return jsonify({"error": "Empty recording file"}), 400
-
-        user_id = str(current_user["id"])
-        
-        # Verify session ownership
-        with get_db() as conn:
-            with dict_cursor(conn) as cur:
-                cur.execute(
-                    "SELECT id FROM interviews WHERE id = %s AND user_id = %s",
-                    (session_id, user_id)
-                )
-                if not cur.fetchone():
-                    return jsonify({"error": "Interview session not found or unauthorized"}), 404
-
-        recordings_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads", "recordings")
-        os.makedirs(recordings_dir, exist_ok=True)
-
-        filename = f"recording_{session_id}.webm"
-        file_path = os.path.join(recordings_dir, filename)
-        file.save(file_path)
-
-        relative_url = f"/uploads/recordings/{filename}"
-
-        # Update database with recording URL
-        with get_db() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "UPDATE interviews SET recording_url = %s WHERE id = %s AND user_id = %s",
-                    (relative_url, session_id, user_id)
-                )
-
-        return jsonify({"success": True, "recording_url": relative_url}), 200
-
-    except Exception as e:
-        logger.error(f"Upload recording error: {e}")
-        return jsonify({"error": "Failed to upload session recording"}), 500
+def upload_recording():
+    """
+    Permanently disabled in Step 2C (Option 1: Client-Side Only).
+    Recordings are retained on the candidate's device. Cloud storage deferred to R4/R6.
+    Returns HTTP 410 Gone immediately without parsing, consuming, or persisting upload payload.
+    """
+    return jsonify({
+        "error": "Server-side recording upload is permanently disabled. Recordings are saved locally on the candidate device.",
+        "code": "RECORDING_UPLOAD_DISABLED"
+    }), 410

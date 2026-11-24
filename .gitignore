@@ -89,3 +89,13 @@ backend/test_out_utf8.txt
 backend/test_login.py
 backend/update_samples.py
 backend/verify_all_users.py
+
+# =========================
+# Browser Automation & Test Profiles
+# =========================
+chrome-*/
+chrome-*-profile/
+chrome-test/
+chrome-temp-*/
+.agents/
+

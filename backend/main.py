@@ -4,11 +4,40 @@ from flask_cors import CORS
 from app.controllers.interview_socket import sock
 from routes import register_routes
 from config import Config
-from utils.middleware import register_request_logger, get_metrics
+from utils.middleware import register_request_logger, get_metrics, setup_logger
 from extensions import init_db
 
+logger = setup_logger("prepai")
+
 # Environment-aware allowed frontend origins
-is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+is_production = Config.ENVIRONMENT == "production"
+
+_secret_key_warned = False
+
+
+def check_production_secret(force: bool = False) -> bool:
+    """
+    Emit a single non-fatal security warning during initialization if
+    the production environment is running with the default dev SECRET_KEY.
+    Never prints or logs the actual SECRET_KEY value.
+    """
+    global _secret_key_warned
+    if _secret_key_warned and not force:
+        return False
+
+    is_insecure = (
+        not Config.SECRET_KEY
+        or not Config.SECRET_KEY.strip()
+        or Config.SECRET_KEY == Config.DEFAULT_SECRET_KEY
+    )
+    if Config.ENVIRONMENT == "production" and is_insecure:
+        logger.warning(
+            "SECURITY WARNING: Production environment is using the default development SECRET_KEY. "
+            "Please configure a secure SECRET_KEY in your environment."
+        )
+        _secret_key_warned = True
+        return True
+    return False
 
 if is_production:
     ALLOWED_ORIGINS = []
@@ -32,6 +61,7 @@ else:
         ALLOWED_ORIGINS.append(frontend_url.rstrip("/"))
 
 def create_app():
+    check_production_secret()
     app = Flask(__name__)
 
     # Primary CORS setup via flask-cors

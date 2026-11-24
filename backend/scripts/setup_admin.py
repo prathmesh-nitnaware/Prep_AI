@@ -1,41 +1,28 @@
+"""
+backend/scripts/setup_admin.py — Legacy Administrator Setup Script (DISARMED)
+=============================================================================
+HISTORICAL CONTEXT:
+This script was originally used to provision an initial administrator in MongoDB.
+Following the migration to Neon PostgreSQL and strict credential sanitization,
+direct creation of administrative accounts via hardcoded credentials in this
+script has been permanently disarmed.
+
+Administrator accounts must be provisioned through secure, authenticated
+application workflows or managed PostgreSQL administration.
+"""
 import sys
-import os
 
-# Add parent directory to path so we can import from config, models, etc.
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from extensions import users_collection
-from werkzeug.security import generate_password_hash
 
 def setup_admin():
-    admin_email = "admin@gmail.com"
-    admin_password = "admin123"
-    
-    # Check if admin already exists
-    admin_user = users_collection.find_one({"email": admin_email})
-    
-    if admin_user:
-        # Update password and role to be sure
-        users_collection.update_one(
-            {"email": admin_email},
-            {"$set": {
-                "password": generate_password_hash(admin_password),
-                "role": "admin"
-            }}
-        )
-        print("Admin user updated.")
-    else:
-        # Create new admin user
-        new_admin = {
-            "name": "Admin",
-            "email": admin_email,
-            "password": generate_password_hash(admin_password),
-            "role": "admin",
-            "onboarding_completed": True,
-            "is_verified": True
-        }
-        users_collection.insert_one(new_admin)
-        print("Admin user created.")
+    """
+    Disarmed administrative setup routine.
+    Refuses execution to prevent hardcoded credential usage or unmanaged database writes.
+    """
+    print("[ERROR] backend/scripts/setup_admin.py is obsolete and has been disarmed.")
+    print("        Direct administrator creation via this legacy script is disabled.")
+    print("        No database connections or modifications were performed.")
+    sys.exit(1)
+
 
 if __name__ == "__main__":
     setup_admin()
